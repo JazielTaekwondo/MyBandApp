@@ -16,7 +16,7 @@ struct TrackOptionCardView: View {
     let shadowColor: Color
 
     var body: some View {
-        NavigationLink(destination: RecorderView(audioSettings: AudioSettings())) {
+        NavigationLink(destination: RecorderView(audioSettings: settings)) { 
             HStack(spacing: 16) {
                 ZStack {
                     Circle()
