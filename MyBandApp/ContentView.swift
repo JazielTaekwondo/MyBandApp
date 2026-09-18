@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ContentView2: View {
+struct ContentView: View {
     @State private var scale: CGFloat = 1.0
     @State private var animation: Bool = false
     @State private var startAnimation: Bool = false

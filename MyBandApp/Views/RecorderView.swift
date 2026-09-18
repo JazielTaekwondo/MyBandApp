@@ -1,33 +1,46 @@
 import SwiftUI
+import AudioToolbox
 
 struct RecorderView: View {
     @StateObject private var recorder = AudioRecorder()
-    // Arreglo de escalas fijas para la onda
-    let escalas: [CGFloat] = [0.262, 0.524, 1.048, 0.524, 0.262]
-    // Paleta de colores para la animación de la grabación
-    let coloresGrabacion: [Color] = [.purple, .blue, .cyan, .blue, .purple]
     
-    // Desplazamiento de índice para rotar la onda y el color
+    @Bindable var audioSettings: AudioSettings
+    
+    let escalas: [CGFloat] = [0.262, 0.524, 1.048, 0.524, 0.262]
+    let coloresGrabacion: [Color] = [.purple, .blue, .cyan, .blue, .purple]
+    let coloresDegradaoGrabacion: [Color] = [.pink, .cyan, .mint, .cyan, .pink]
+    
     @State private var shiftIndex: Int = 0
-    // Temporizador para hacer avanzar la animación
     @State private var timer: Timer?
+    @State private var tickCount: Int = 0
+    @State private var metronomeTickCount: Int = 0
+    
+    @State private var duration: String = "00:00"
+    @State private var secondsElapsed: Int = 0
+    @State private var isBeatActive: Bool = false
 
     var body: some View {
         VStack(spacing: 30) {
+            Text(recorder.isRecording ? "\(duration)" : "00:00")
+                .font(.system(size: 60, weight: .bold, design: .rounded))
+                .foregroundStyle(.primary)
+            
             HStack(spacing: 8) {
                 ForEach(escalas.indices, id: \.self) { index in
-                    let currentScaleIndex = (index + shiftIndex) % escalas.count //Indice para cambiar escala y color del rectangulo
+                    let currentScaleIndex = (index + shiftIndex) % escalas.count
                     
                     RoundedRectangle(cornerRadius: 10)
-                        // Color dinámico según el estado de grabación
-                        .fill(recorder.isRecording ? coloresGrabacion[currentScaleIndex] : Color.gray)
+                        .fill(
+                            recorder.isRecording
+                            ? LinearGradient(colors: [coloresGrabacion[currentScaleIndex], coloresDegradaoGrabacion[currentScaleIndex]], startPoint: .topLeading, endPoint: .bottomTrailing)
+                            : LinearGradient(colors: [.pink, .purple], startPoint: .top, endPoint: .bottom)
+                        )
                         .frame(width: 25, height: 25)
                         .scaleEffect(
                             x: 1.0,
                             y: recorder.isRecording ? 1.0 + escalas[currentScaleIndex] : 1.0
                         )
-                        // Transición suave tanto de escala como de color
-                        .animation(.easeInOut(duration: 0.25), value: shiftIndex)
+                        .animation(.easeInOut(duration: 0.1), value: shiftIndex)
                 }
             }
             .frame(height: 60)
@@ -40,8 +53,23 @@ struct RecorderView: View {
                 recorder.toggleRecording()
             }) {
                 ZStack {
+                    ZStack {
+                        if recorder.isRecording {
+                            Circle()
+                                .stroke(Color.cyan.opacity(1.9), lineWidth: 12)
+                                .scaleEffect(isBeatActive ? 1.0 : 1.0)
+                                .opacity(isBeatActive ? 1.0 : 0.0)
+                                .animation(.easeOut(duration: 0.15), value: isBeatActive)
+                        }
+                    }
+                    .frame(width: 110, height: 110)
+                    
                     Circle()
-                        .fill(recorder.isRecording ? Color.green : Color.red)
+                        .fill(
+                            recorder.isRecording
+                            ? LinearGradient(colors: [.green, .indigo], startPoint: .topLeading, endPoint: .bottomTrailing)
+                            : LinearGradient(colors: [.orange, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+                        )
                         .frame(width: 100, height: 100)
                         .shadow(radius: 5)
                     
@@ -56,23 +84,66 @@ struct RecorderView: View {
         .padding()
         .onChange(of: recorder.isRecording) { _, isRecording in
             if isRecording {
-                startWaveAnimation()
+                startUnifiedTimer()
             } else {
-                stopWaveAnimation()
+                stopUnifiedTimer()
+            }
+        }
+        // SOLUCIÓN 2: Si el usuario sale de la vista por completo, asegura detener la grabación y el timer
+        .onDisappear {
+            if recorder.isRecording {
+                recorder.toggleRecording()
+            }
+            stopUnifiedTimer()
+        }
+    }
+
+    private func startUnifiedTimer() {
+        timer?.invalidate()
+        tickCount = 0
+        metronomeTickCount = 0
+        secondsElapsed = 0
+        duration = "00:00"
+        
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            // SOLUCIÓN 1: Lee el BPM de forma dinámica en cada ciclo para reflejar cambios recientes
+            let bpmInt = Int(audioSettings.bpm) ?? 120
+            let ticksPerBeat = max(1, Int(round((60.0 / Double(bpmInt)) / 0.1)))
+            
+            // 1. Mover la onda
+            shiftIndex = (shiftIndex + 1) % escalas.count
+            
+            // 2. Lógica del Metrónomo (Sonido y Aro visual)
+            metronomeTickCount += 1
+            if metronomeTickCount >= ticksPerBeat {
+                metronomeTickCount = 0
+                triggerMetronomeBeat()
+            }
+            
+            // 3. Conteo de segundos y límite de 10 minutos
+            tickCount += 1
+            if tickCount >= 10 {
+                tickCount = 0
+                if secondsElapsed < 600 {
+                    secondsElapsed += 1
+                    let minutes = secondsElapsed / 60
+                    let seconds = secondsElapsed % 60
+                    duration = String(format: "%02d:%02d", minutes, seconds)
+                } else {
+                    recorder.toggleRecording()
+                }
             }
         }
     }
 
-    private func startWaveAnimation() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { _ in
-            shiftIndex = (shiftIndex + 1) % escalas.count
-        }
-    }
-
-    private func stopWaveAnimation() {
+    private func stopUnifiedTimer() {
         timer?.invalidate()
         timer = nil
+        tickCount = 0
+        metronomeTickCount = 0
+        secondsElapsed = 0
+        duration = "00:00"
+        isBeatActive = false
         
         var transaction = Transaction()
         transaction.disablesAnimations = true
@@ -80,8 +151,17 @@ struct RecorderView: View {
             shiftIndex = 0
         }
     }
+    
+    private func triggerMetronomeBeat() {
+        AudioServicesPlaySystemSound(1104)
+        
+        isBeatActive = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+            isBeatActive = false
+        }
+    }
 }
 
 #Preview {
-    RecorderView()
+    RecorderView(audioSettings: AudioSettings())
 }

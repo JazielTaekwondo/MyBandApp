@@ -7,79 +7,71 @@
 
 import SwiftUI
 
-struct NewProjectMenuView: View{
-    var body: some View{
-        NavigationStack{
-            VStack{
-                Spacer()
+// MARK: - Vista Principal
+struct NewProjectMenuView: View {
+    @Bindable var audioSettings = settings
+    @FocusState private var isInputFocused: Bool
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+
                 Text("Choose the type of track to get started!")
-                    .foregroundStyle(Color.black)
-                    .font(.title2)
-                    .fontWeight(.regular)
-                List{
-                    // Boton 1
-                        HStack{
-                            ZStack{
-                                Rectangle()
-                                    .fill(Color.cyan)
-                                    .frame(width: 50, height: 50)
-                                Image(systemName: "metronome.fill")
-                                    .resizable()
-                                    .frame(width: 30, height: 35)
-                            }
-                            VStack{
-                                Text("RYTHM")
-                                Text("Record your song's lead vocal or your guitar solo.")
-                            }
-                        } // Fin HStack
-                    // Fin Boton 1
-                    .background(Color.blue)
-                    
-                    NavigationLink(destination: RecorderView()){ // Boton 2
-                        HStack{
-                            ZStack{
-                                Rectangle()
-                                    .fill(Color.yellow)
-                                    .frame(width: 50, height: 50)
-                                
-                                Image(systemName: "waveform")
-                                    .resizable()
-                                    .frame(width: 30, height: 35)
-                            }
-                            VStack{
-                                Text("MELODY")
-                                Text("Record your song's lead vocal or your guitar solo.")
-                            }
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 10)
+
+                ScrollView {
+                    VStack(spacing: 16) {
+
+                        // MARK: - 1. Ritmo
+                        ConfiguringRhythmView(
+                            audioSettings: audioSettings,
+                            isInputFocused: $isInputFocused
+                        )
+
+                        // MARK: - 2. Melodía
+                        NavigationLink(destination: RecorderView(audioSettings: audioSettings)) {
+                            TrackOptionCardView(
+                                title: "MELODY",
+                                description: "Record your song's lead vocal or guitar solo.",
+                                systemImageName: "waveform",
+                                gradientColors: [.yellow, .orange],
+                                shadowColor: .orange.opacity(0.3)
+                            )
                         }
-                    } // Fin Boton 2
-                    .background(Color.orange)
-                    
-                    NavigationLink(destination: RecorderView()){ // Boton 3
-                        HStack{
-                            ZStack{
-                                Rectangle()
-                                    .fill(Color.pink)
-                                    .frame(width: 50, height: 50)
-                                Image(systemName: "music.note")
-                                    .resizable()
-                                    .frame(width: 30, height: 35)
-                            }
-                            VStack{
-                                Text("HARMONY")
-                                Text("Record the chords for your song's accompaniment.")
-                            }
+                        .buttonStyle(.plain)
+
+                        // MARK: - 3. Armonía
+                        NavigationLink(destination: RecorderView(audioSettings: audioSettings)) {
+                            TrackOptionCardView(
+                                title: "HARMONY",
+                                description: "Record the chords for your song's accompaniment.",
+                                systemImageName: "music.note",
+                                gradientColors: [.red, .pink],
+                                shadowColor: .red.opacity(0.3)
+                            )
                         }
-                    } // Fin Boton 3
-                    .background(Color.red)
-                } // FIN List
-                .padding()
-                
-            } // Fin VStack
-            .scrollContentBackground(.hidden)
-            .padding()
-        } // Fin NavigationStack
-    }
-}
+                        .buttonStyle(.plain)
+
+                    } // Fin de VStack Lista de Tarjetas
+                    .padding(.horizontal)
+                } // Fin de ScrollView
+            } // Fin de VStack Principal
+            .navigationTitle("New Project")
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        isInputFocused = false
+                    } // Fin de Button Done
+                    .font(.body.bold())
+                } // Fin de ToolbarItemGroup
+            } // Fin de toolbar
+        } // Fin de NavigationStack
+    } // Fin de body
+} // Fin de struct NewProjectMenuView
 
 #Preview {
     NewProjectMenuView()
