@@ -14,7 +14,7 @@ struct ContentView: View {
     @State private var showFinalWhiteScreen: Bool = false
     
     let sinusoidal_scales: [CGFloat] = [1.0, 1.38, 1.7, 1.92, 2.0, 1.92, 1.7, 1.38]
-    let sinusoidal_scales_black: [CGFloat] = [1.0,1.0,1.0,1.0,  1.0,1.0,1.0,1.7, 1.7,1.0,1.0,1.0, 1.0,1.0,1.0,2.0,  2.0,1.0,1.0,1.7, 1.7,1.0,1.0,1.5, 1.5,1.0,1.0,1.0,  1.0,1.0,1.0,1.0]
+    let sinusoidal_scales_black: [CGFloat] = [1.0,1.0,1.0,1.0,  1.0,1.0,1.0,1.7, 1.7,1.0,1.0,1.0,  1.0,1.0,1.0,2.0,  2.0,1.0,1.0,1.7, 1.7,1.0,1.0,1.5,  1.5,1.0,1.0,1.0,  1.0,1.0,1.0,1.0]
     let black_keys: [Bool] = [
         false, false, false, true,  true, false, false, true,
         true,  false, false, false, false, false, false, true,
@@ -24,37 +24,35 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // Se muestra RecorderView cuando finaliza toda la secuencia
+            // Se muestra StartMenuView cuando finaliza toda la secuencia
             if showFinalWhiteScreen {
                 StartMenuView()
                     .transition(.opacity)
             } else {
                 // Secuencia de animación de bienvenida (Splash)
-                ZStack {
-                    VStack { // Teclas blancas
-                        Spacer()
-                        HStack(spacing: 0) {
-                            ForEach(0..<8, id: \.self) { index in
-                                Rectangle()
-                                    .fill(Color.white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 100 * scale * sinusoidal_scales[index])
-                                    .border(Color.black, width: 2)
-                            }
+                ZStack(alignment: .bottom) {
+                    // Teclas blancas
+                    HStack(spacing: 0) {
+                        ForEach(0..<8, id: \.self) { index in
+                            Rectangle()
+                                .fill(Color.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 100 * scale * sinusoidal_scales[index])
+                                .border(Color.black, width: 2)
                         }
                     }
+                    .frame(maxHeight: .infinity, alignment: .bottom)
                     
-                    VStack { // Teclas negras
-                        Spacer()
-                        HStack(spacing: 0) {
-                            ForEach(0..<32, id: \.self) { index in
-                                Rectangle()
-                                    .fill(black_keys[index] ? Color.black : Color.clear)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 70 * scale * sinusoidal_scales_black[index])
-                            }
+                    // Teclas negras
+                    HStack(spacing: 0) {
+                        ForEach(0..<32, id: \.self) { index in
+                            Rectangle()
+                                .fill(black_keys[index] ? Color.black : Color.clear)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 70 * scale * sinusoidal_scales_black[index])
                         }
                     }
+                    .frame(maxHeight: .infinity, alignment: .bottom)
                     
                     // Pantalla blanca intermedia con el logo
                     if animation && startAnimation {
@@ -92,7 +90,7 @@ struct ContentView: View {
             
             // 2. Animación de escala
             withAnimation(.linear(duration: 0.8)) {
-                scale = 10.0
+                scale = 20.0
             }
             
             // 3. Espera tras la animación del teclado
@@ -106,7 +104,7 @@ struct ContentView: View {
             // 5. Mantiene el logo visible durante 1.5 s
             try? await Task.sleep(for: .seconds(1.5))
             
-            // 6. Transición a RecorderView
+            // 6. Transición a la siguiente vista
             withAnimation(.easeInOut(duration: 0.5)) {
                 showFinalWhiteScreen = true
             }

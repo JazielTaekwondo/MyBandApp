@@ -2,7 +2,7 @@ import Foundation
 
 struct AudioProcessor {
     // Configuración general para cada banda con umbral YIN independiente
-    struct BandConfig {
+    nonisolated struct BandConfig {
         let name: String
         let lowCutoff: Double
         let highCutoff: Double
@@ -12,7 +12,7 @@ struct AudioProcessor {
     }
     
     // Cálculo de Valor Eficaz (RMS)
-    static func calculateRMS(data: [Float]) -> Float {
+    nonisolated static func calculateRMS(data: [Float]) -> Float {
         guard !data.isEmpty else { return 0.0 }
         var sumSquares: Float = 0.0
         for sample in data {
@@ -22,12 +22,12 @@ struct AudioProcessor {
     }
     
     // Aplica la verificación de RMS con umbral específico
-    static func passesRMSFilter(data: [Float], threshold: Float) -> Bool {
+    nonisolated static func passesRMSFilter(data: [Float], threshold: Float) -> Bool {
         return calculateRMS(data: data) >= threshold
     }
     
     // Filtro Paso Banda Biquad IIR de 2.º orden
-    static func bandPassFilter(pcmData: [Float], sampleRate: Double, lowCutoff: Double, highCutoff: Double) -> [Float] {
+    nonisolated static func bandPassFilter(pcmData: [Float], sampleRate: Double, lowCutoff: Double, highCutoff: Double) -> [Float] {
         guard !pcmData.isEmpty else { return [] }
         
         let centerFreq = sqrt(lowCutoff * highCutoff)
@@ -48,7 +48,7 @@ struct AudioProcessor {
     }
     
     // Ejecución de la ecuación en diferencias Biquad Direct Form I
-    private static func applyBiquad(data: [Float], b0: Float, b1: Float, b2: Float, a1: Float, a2: Float) -> [Float] {
+    nonisolated private static func applyBiquad(data: [Float], b0: Float, b1: Float, b2: Float, a1: Float, a2: Float) -> [Float] {
         var output = [Float](repeating: 0.0, count: data.count)
         var x1: Float = 0.0, x2: Float = 0.0
         var y1: Float = 0.0, y2: Float = 0.0

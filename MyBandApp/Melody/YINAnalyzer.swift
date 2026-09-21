@@ -13,11 +13,11 @@ struct YinAnalyzer {
     // Configuración separada con umbral YIN por banda:
     // Graves: Umbrales más restrictivos (0.10 - 0.15) para evitar subarmónicos/armónicos erróneos
     // Agudos: Umbrales más permisivos (0.20 - 0.30) para tolerar la pérdida de amplitud del filtro
-    static let subBassBand = AudioProcessor.BandConfig(
+    nonisolated static let subBassBand = AudioProcessor.BandConfig(
         name: "subBass", lowCutoff: 20, highCutoff: 60, windowSize: 4096, rmsThreshold: 0.025, yinThreshold: 0.10
     )
     
-    static let mainBands: [AudioProcessor.BandConfig] = [
+    nonisolated static let mainBands: [AudioProcessor.BandConfig] = [
         .init(name: "bass", lowCutoff: 60, highCutoff: 250, windowSize: 2048, rmsThreshold: 0.020, yinThreshold: 0.15),
         .init(name: "lowMid", lowCutoff: 250, highCutoff: 500, windowSize: 1024, rmsThreshold: 0.015, yinThreshold: 0.20),
         .init(name: "mid", lowCutoff: 500, highCutoff: 2000, windowSize: 512, rmsThreshold: 0.010, yinThreshold: 0.25),

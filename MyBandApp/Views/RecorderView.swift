@@ -19,6 +19,11 @@ struct RecorderView: View {
     @State private var secondsElapsed: Int = 0
     @State private var isBeatActive: Bool = false
 
+    // MARK: - Navegación automática al analizador
+    @State private var goToAnalyzer: Bool = false
+    @State private var wasRecording: Bool = false
+    @State private var isLeavingView: Bool = false
+
     var body: some View {
         VStack(spacing: 30) {
             Text(recorder.isRecording ? "\(duration)" : "00:00")
@@ -84,14 +89,25 @@ struct RecorderView: View {
         .padding()
         .onChange(of: recorder.isRecording) { _, isRecording in
             if isRecording {
+                wasRecording = true
                 startUnifiedTimer()
             } else {
                 stopUnifiedTimer()
+                // Solo navega si la grabación terminó estando en la vista
+                // (no cuando se detiene por salir de la vista)
+                if wasRecording && !isLeavingView {
+                    wasRecording = false
+                    goToAnalyzer = true
+                }
             }
         }
-        // SOLUCIÓN 2: Si el usuario sale de la vista por completo, asegura detener la grabación y el timer
+        // Destino de navegación automática
+        .navigationDestination(isPresented: $goToAnalyzer) {
+            FrecuencyView()
+        }
         .onDisappear {
             if recorder.isRecording {
+                isLeavingView = true
                 recorder.toggleRecording()
             }
             stopUnifiedTimer()
@@ -106,21 +122,17 @@ struct RecorderView: View {
         duration = "00:00"
         
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-            // SOLUCIÓN 1: Lee el BPM de forma dinámica en cada ciclo para reflejar cambios recientes
             let bpmInt = Int(audioSettings.bpm) ?? 120
             let ticksPerBeat = max(1, Int(round((60.0 / Double(bpmInt)) / 0.1)))
             
-            // 1. Mover la onda
             shiftIndex = (shiftIndex + 1) % escalas.count
             
-            // 2. Lógica del Metrónomo (Sonido y Aro visual)
             metronomeTickCount += 1
             if metronomeTickCount >= ticksPerBeat {
                 metronomeTickCount = 0
                 triggerMetronomeBeat()
             }
             
-            // 3. Conteo de segundos y límite de 10 minutos
             tickCount += 1
             if tickCount >= 10 {
                 tickCount = 0
@@ -163,5 +175,7 @@ struct RecorderView: View {
 }
 
 #Preview {
-    RecorderView(audioSettings: AudioSettings())
+    NavigationStack {
+        RecorderView(audioSettings: AudioSettings())
+    }
 }
